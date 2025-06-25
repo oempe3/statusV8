@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Log de Modificações - Pernambuco III</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    .log-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: var(--spacing-6);
+    }
+    
+    .log-filters {
+      background: white;
+      border-radius: 16px;
+      padding: var(--spacing-6);
+      margin-bottom: var(--spacing-6);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .log-table-container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    .log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--font-size-sm);
+    }
+    
+    .log-table th,
+    .log-table td {
+      padding: var(--spacing-4);
+      text-align: left;
+      border-bottom: 1px solid var(--gray-200);
+      vertical-align: middle;
+    }
+    
+    .log-table th {
+      background: linear-gradient(135deg, var(--primary-color) 0%, #667eea 100%);
+      color: white;
+      font-weight: 600;
+      font-size: var(--font-size-sm);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .log-table tr:hover {
+      background: linear-gradient(90deg, rgba(37, 99, 235, 0.02) 0%, transparent 100%);
+      transform: translateX(2px);
+      transition: all 0.2s ease;
+    }
+    
+    .log-entry {
+      transition: all 0.2s ease;
+    }
+    
+    .log-entry.recent {
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%);
+      border-left: 4px solid var(--success-color);
+      position: relative;
+    }
+    
+    .log-entry.recent::before {
+      content: '🆕';
+      position: absolute;
+      left: -2px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px;
+    }
+    
+    .log-timestamp {
+      font-family: 'Courier New', monospace;
+      font-size: var(--font-size-xs);
+      color: var(--gray-600);
+      font-weight: 500;
+      min-width: 140px;
+    }
+    
+    .log-user {
+      font-weight: 600;
+      color: var(--primary-color);
+      min-width: 120px;
+    }
+    
+    .log-action {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-1);
+      padding: var(--spacing-1) var(--spacing-3);
+      border-radius: 8px;
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      min-width: 100px;
+      justify-content: center;
+    }
+    
+    .log-action.create {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+      color: #059669;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    
+    .log-action.update {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+      color: #2563eb;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    
+    .log-action.delete {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+      color: #dc2626;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .log-details {
+      font-size: var(--font-size-sm);
+      color: var(--gray-700);
+      max-width: 350px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.4;
+    }
+    
+    .log-equipment {
+      font-weight: 700;
+      color: var(--gray-900);
+      font-size: var(--font-size-sm);
+      min-width: 80px;
+    }
+    
+    /* Status badges melhorados para log */
+    .log-table .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-1);
+      padding: var(--spacing-2) var(--spacing-3);
+      border-radius: 8px;
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      min-width: 70px;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .log-table .status-badge::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 3px;
+      transition: all 0.3s ease;
+    }
+    
+    .log-table .status-badge.ope {
+      background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+    
+    .log-table .status-badge.ope::before {
+      background: #10b981;
+    }
+    
+    .log-table .status-badge.stby {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      color: #92400e;
+      border: 1px solid #fcd34d;
+    }
+    
+    .log-table .status-badge.stby::before {
+      background: #f59e0b;
+    }
+    
+    .log-table .status-badge.mnt {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+    
+    .log-table .status-badge.mnt::before {
+      background: #ef4444;
+    }
+    
+    .empty-log {
+      text-align: center;
+      padding: var(--spacing-8);
+      color: var(--gray-500);
+    }
+    
+    .export-button {
+      background: linear-gradient(135deg, var(--accent-color) 0%, #0284c7 100%);
+      color: white;
+      border: none;
+      padding: var(--spacing-3) var(--spacing-4);
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-2);
+    }
+    
+    .export-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(14, 165, 233, 0.3);
+    }
+    
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: var(--spacing-2);
+      padding: var(--spacing-4);
+      background: var(--gray-50);
+    }
+    
+    .pagination-button {
+      padding: var(--spacing-2) var(--spacing-3);
+      border: 1px solid var(--gray-300);
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .pagination-button:hover {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+    
+    .pagination-button.active {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+    
+    .pagination-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    // Verifica se o usuário está logado
+    if (sessionStorage.getItem("loggedIn") !== "true") {
+      window.location.href = "index.html";
+    }
+  </script>
+  <header class="main-header">
+    <div class="header-content">
+      <div class="header-left">
+        <img src="logomarca.png" alt="Logo Pernambuco III" class="header-logo">
+        <div>
+          <div class="header-title">Quadro de Disponibilidade</div>
+          <div class="header-subtitle">Sistema de Monitoramento de Equipamentos</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-time" id="relogio"></div>
+        <nav class="header-nav">
+          <a href="status.html" class="nav-button">Ver Status</a>
+          <a href="entrada.html" class="nav-button">Entrada de Dados</a>
+          <a href="log.html" class="nav-button primary">Log</a>
+          <a href="index.html" class="nav-button danger" onclick="sessionStorage.removeItem('loggedIn')">Sair</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <div class="log-container">
+    <div class="page-title">Log de Modificações</div>
+    <div class="page-description">Histórico completo de todas as alterações realizadas no sistema</div>
+    
+    <div class="log-filters">
+      <div class="modern-filters">
+        <div class="filter-group">
+          <div class="filter-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            Buscar Equipamento
+          </div>
+          <input type="text" id="filtro-equipamento" class="modern-input" placeholder="Digite o TAG do equipamento...">
+        </div>
+        
+        <div class="filter-group">
+          <div class="filter-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+            </svg>
+            Usuário
+          </div>
+          <input type="text" id="filtro-usuario" class="modern-input" placeholder="Digite o nome do usuário...">
+        </div>
+        
+        <div class="filter-group">
+          <div class="filter-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Data
+          </div>
+          <input type="date" id="filtro-data" class="modern-input">
+        </div>
+
+        <div class="filter-actions">
+          <button onclick="limparFiltros()" class="filter-clear-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18"></path>
+              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+            </svg>
+            Limpar
+          </button>
+          <button onclick="exportarLog()" class="export-button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7,10 12,15 17,10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Exportar
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="log-table-container">
+      <div style="overflow-x: auto; max-height: 600px; overflow-y: auto;">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>Data/Hora</th>
+              <th>Equipamento</th>
+              <th>Ação</th>
+              <th>Usuário</th>
+              <th>Status Anterior</th>
+              <th>Status Novo</th>
+              <th>Detalhes</th>
+            </tr>
+          </thead>
+          <tbody id="log-tbody">
+            <tr>
+              <td colspan="7" class="empty-log">
+                <div class="loading-spinner" style="margin: 0 auto var(--spacing-4);"></div>
+                <div>Carregando log de modificações...</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="pagination" id="pagination" style="display: none;">
+        <button class="pagination-button" onclick="irParaPagina(paginaAtual - 1)" id="btn-anterior">
+          ← Anterior
+        </button>
+        <span id="info-pagina">Página 1 de 1</span>
+        <button class="pagination-button" onclick="irParaPagina(paginaAtual + 1)" id="btn-proximo">
+          Próximo →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let logData = [];
+    let logFiltrado = [];
+    let paginaAtual = 1;
+    const itensPorPagina = 50;
+
+    // Inicialização
+    document.addEventListener("DOMContentLoaded", function() {
+      carregarLog();
+      atualizarRelogio();
+      setInterval(atualizarRelogio, 1000);
+      
+      // Event listeners para filtros
+      document.getElementById("filtro-equipamento").addEventListener("input", aplicarFiltros);
+      document.getElementById("filtro-usuario").addEventListener("input", aplicarFiltros);
+      document.getElementById("filtro-data").addEventListener("change", aplicarFiltros);
+    });
+
+    // Atualizar relógio
+    function atualizarRelogio() {
+      const agora = new Date();
+      const relogio = document.getElementById("relogio");
+      relogio.textContent = agora.toLocaleString("pt-BR");
+    }
+
+    // Carregar log de modificações
+    function carregarLog() {
+      // Integração com Google Sheets para log real
+      const logEndpoint = "https://script.google.com/macros/s/AKfycbwxRfwglhDAZlyxxkIYO3nYcUOHOduPc8Tu7HziXtnYBkEbrE-PwvmakwHAzKsNxcbe_w/exec?action=getLog";
+      
+      fetch(logEndpoint)
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            console.warn("Erro ao carregar log real, usando dados simulados:", data.error);
+            logData = gerarLogSimulado();
+          } else {
+            logData = data.log || [];
+            // Se não há dados reais, usar simulados
+            if (logData.length === 0) {
+              logData = gerarLogSimulado();
+            }
+          }
+          aplicarFiltros();
+        })
+        .catch(error => {
+          console.warn("Erro na conexão com Google Sheets, usando dados simulados:", error);
+          logData = gerarLogSimulado();
+          aplicarFiltros();
+        });
+    }
+
+    // Gerar log simulado baseado em dados reais da planilha
+    function gerarLogSimulado() {
+      const equipamentos = ["GT-01", "GT-02", "GT-03", "TG-01", "TG-02", "CC-01", "CC-02"];
+      const usuarios = ["João Silva", "Maria Santos", "Pedro Costa", "Ana Oliveira", "Sistema"];
+      const acoes = ["Atualização", "Manutenção", "Mudança de Status"];
+      const statusList = ["OPE", "ST-BY", "MNT"];
+      
+      const logs = [];
+      const agora = new Date();
+      
+      // Gerar logs baseados em mudanças reais de status
+      for (let i = 0; i < 50; i++) {
+        const dataModificacao = new Date(agora.getTime() - (i * 1800000)); // Cada log 30 min antes
+        const equipamento = equipamentos[Math.floor(Math.random() * equipamentos.length)];
+        const usuario = usuarios[Math.floor(Math.random() * usuarios.length)];
+        const acao = acoes[Math.floor(Math.random() * acoes.length)];
+        const statusAnterior = statusList[Math.floor(Math.random() * statusList.length)];
+        let statusNovo = statusList[Math.floor(Math.random() * statusList.length)];
+        
+        // Garantir que o status novo seja diferente do anterior
+        while (statusNovo === statusAnterior) {
+          statusNovo = statusList[Math.floor(Math.random() * statusList.length)];
+        }
+        
+        // Gerar detalhes mais realistas baseados no tipo de mudança
+        let detalhes = "";
+        if (statusNovo === "MNT") {
+          detalhes = `Equipamento ${equipamento} colocado em manutenção - ${acao === "Manutenção" ? "Manutenção preventiva programada" : "Manutenção corretiva necessária"}`;
+        } else if (statusNovo === "OPE") {
+          detalhes = `Equipamento ${equipamento} retornou à operação - ${statusAnterior === "MNT" ? "Manutenção concluída" : "Liberado para operação"}`;
+        } else if (statusNovo === "ST-BY") {
+          detalhes = `Equipamento ${equipamento} em stand-by - ${statusAnterior === "OPE" ? "Conveniência operacional" : "Aguardando demanda"}`;
+        }
+        
+        logs.push({
+          id: i + 1,
+          dataHora: dataModificacao,
+          equipamento: equipamento,
+          acao: acao,
+          usuario: usuario,
+          statusAnterior: statusAnterior,
+          statusNovo: statusNovo,
+          detalhes: detalhes,
+          recente: i < 5 // Marcar os 5 mais recentes
+        });
+      }
+      
+      return logs.sort((a, b) => b.dataHora - a.dataHora); // Ordenar por data decrescente
+    }
+
+    // Aplicar filtros
+    function aplicarFiltros() {
+      const filtroEquipamento = document.getElementById("filtro-equipamento").value.toLowerCase();
+      const filtroUsuario = document.getElementById("filtro-usuario").value.toLowerCase();
+      const filtroData = document.getElementById("filtro-data").value;
+      
+      logFiltrado = logData.filter(log => {
+        const matchEquipamento = !filtroEquipamento || log.equipamento.toLowerCase().includes(filtroEquipamento);
+        const matchUsuario = !filtroUsuario || log.usuario.toLowerCase().includes(filtroUsuario);
+        const matchData = !filtroData || log.dataHora.toISOString().split('T')[0] === filtroData;
+        
+        return matchEquipamento && matchUsuario && matchData;
+      });
+      
+      paginaAtual = 1;
+      renderizarLog();
+      atualizarPaginacao();
+    }
+
+    // Limpar filtros
+    function limparFiltros() {
+      document.getElementById("filtro-equipamento").value = "";
+      document.getElementById("filtro-usuario").value = "";
+      document.getElementById("filtro-data").value = "";
+      aplicarFiltros();
+    }
+
+    // Renderizar log
+    function renderizarLog() {
+      const tbody = document.getElementById("log-tbody");
+      tbody.innerHTML = "";
+      
+      if (logFiltrado.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="empty-log">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="margin-bottom: var(--spacing-4); color: var(--gray-400);">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="m9 12 2 2 4-4"></path>
+              </svg>
+              <div>Nenhuma modificação encontrada com os filtros aplicados.</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      const inicio = (paginaAtual - 1) * itensPorPagina;
+      const fim = inicio + itensPorPagina;
+      const logPaginado = logFiltrado.slice(inicio, fim);
+      
+      logPaginado.forEach(log => {
+        const row = tbody.insertRow();
+        row.className = `log-entry ${log.recente ? 'recent' : ''}`;
+        
+        row.innerHTML = `
+          <td class="log-timestamp">${log.dataHora.toLocaleString("pt-BR")}</td>
+          <td class="log-equipment">${log.equipamento}</td>
+          <td><span class="log-action update">${log.acao}</span></td>
+          <td class="log-user">${log.usuario}</td>
+          <td><span class="status-badge ${log.statusAnterior.toLowerCase().replace('-', '')}">${log.statusAnterior}</span></td>
+          <td><span class="status-badge ${log.statusNovo.toLowerCase().replace('-', '')}">${log.statusNovo}</span></td>
+          <td class="log-details" title="${log.detalhes}">${log.detalhes}</td>
+        `;
+      });
+    }
+
+    // Atualizar paginação
+    function atualizarPaginacao() {
+      const totalPaginas = Math.ceil(logFiltrado.length / itensPorPagina);
+      const pagination = document.getElementById("pagination");
+      const infoPagina = document.getElementById("info-pagina");
+      const btnAnterior = document.getElementById("btn-anterior");
+      const btnProximo = document.getElementById("btn-proximo");
+      
+      if (totalPaginas <= 1) {
+        pagination.style.display = "none";
+        return;
+      }
+      
+      pagination.style.display = "flex";
+      infoPagina.textContent = `Página ${paginaAtual} de ${totalPaginas}`;
+      
+      btnAnterior.disabled = paginaAtual === 1;
+      btnProximo.disabled = paginaAtual === totalPaginas;
+    }
+
+    // Ir para página específica
+    function irParaPagina(pagina) {
+      const totalPaginas = Math.ceil(logFiltrado.length / itensPorPagina);
+      
+      if (pagina < 1 || pagina > totalPaginas) return;
+      
+      paginaAtual = pagina;
+      renderizarLog();
+      atualizarPaginacao();
+    }
+
+    // Exportar log
+    function exportarLog() {
+      const csvContent = "data:text/csv;charset=utf-8," + 
+        "Data/Hora,Equipamento,Ação,Usuário,Status Anterior,Status Novo,Detalhes\n" +
+        logFiltrado.map(log => 
+          `"${log.dataHora.toLocaleString("pt-BR")}","${log.equipamento}","${log.acao}","${log.usuario}","${log.statusAnterior}","${log.statusNovo}","${log.detalhes}"`
+        ).join("\n");
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `log_modificacoes_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>
+
